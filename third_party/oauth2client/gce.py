@@ -17,7 +17,7 @@
 Utilities for making it easier to use OAuth 2.0 on Google Compute Engine.
 """
 
-__author__ = 'jcgregorio@google.com (Joe Gregorio)'
+__author__ = "jcgregorio@google.com (Joe Gregorio)"
 
 import httplib2
 import logging
@@ -31,12 +31,14 @@ from oauth2client.client import AssertionCredentials
 logger = logging.getLogger(__name__)
 
 # URI Template for the endpoint that returns access_tokens.
-META = ('http://metadata.google.internal/0.1/meta-data/service-accounts/'
-        'default/acquire{?scope}')
+META = (
+    "http://metadata.google.internal/0.1/meta-data/service-accounts/"
+    "default/acquire{?scope}"
+)
 
 
 class AppAssertionCredentials(AssertionCredentials):
-  """Credentials object for Compute Engine Assertion Grants
+    """Credentials object for Compute Engine Assertion Grants
 
   This object will allow a Compute Engine instance to identify itself to
   Google and other OAuth 2.0 servers that can verify assertions. It can be used
@@ -48,26 +50,26 @@ class AppAssertionCredentials(AssertionCredentials):
   generate and refresh its own access tokens.
   """
 
-  @util.positional(2)
-  def __init__(self, scope, **kwargs):
-    """Constructor for AppAssertionCredentials
+    @util.positional(2)
+    def __init__(self, scope, **kwargs):
+        """Constructor for AppAssertionCredentials
 
     Args:
       scope: string or iterable of strings, scope(s) of the credentials being
         requested.
     """
-    self.scope = util.scopes_to_string(scope)
+        self.scope = util.scopes_to_string(scope)
 
-    # Assertion type is no longer used, but still in the parent class signature.
-    super(AppAssertionCredentials, self).__init__(None)
+        # Assertion type is no longer used, but still in the parent class signature.
+        super(AppAssertionCredentials, self).__init__(None)
 
-  @classmethod
-  def from_json(cls, json):
-    data = simplejson.loads(json)
-    return AppAssertionCredentials(data['scope'])
+    @classmethod
+    def from_json(cls, json):
+        data = simplejson.loads(json)
+        return AppAssertionCredentials(data["scope"])
 
-  def _refresh(self, http_request):
-    """Refreshes the access_token.
+    def _refresh(self, http_request):
+        """Refreshes the access_token.
 
     Skip all the storage hoops and just refresh using the API.
 
@@ -78,13 +80,13 @@ class AppAssertionCredentials(AssertionCredentials):
     Raises:
       AccessTokenRefreshError: When the refresh fails.
     """
-    uri = uritemplate.expand(META, {'scope': self.scope})
-    response, content = http_request(uri)
-    if response.status == 200:
-      try:
-        d = simplejson.loads(content)
-      except StandardError, e:
-        raise AccessTokenRefreshError(str(e))
-      self.access_token = d['accessToken']
-    else:
-      raise AccessTokenRefreshError(content)
+        uri = uritemplate.expand(META, {"scope": self.scope})
+        response, content = http_request(uri)
+        if response.status == 200:
+            try:
+                d = simplejson.loads(content)
+            except Exception as e:
+                raise AccessTokenRefreshError(str(e))
+            self.access_token = d["accessToken"]
+        else:
+            raise AccessTokenRefreshError(content)

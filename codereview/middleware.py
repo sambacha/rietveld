@@ -28,78 +28,79 @@ from codereview import models
 
 
 class AddHSTSHeaderMiddleware(object):
-  """Add HTTP Strict Transport Security header."""
+    """Add HTTP Strict Transport Security header."""
 
-  def process_response(self, request, response):
-    if request.is_secure():
-      response['Strict-Transport-Security'] = (
-          'max-age=%d' % settings.HSTS_MAX_AGE)
-    return response
+    def process_response(self, request, response):
+        if request.is_secure():
+            response["Strict-Transport-Security"] = "max-age=%d" % settings.HSTS_MAX_AGE
+        return response
 
 
 class AddUserToRequestMiddleware(object):
-  """Add a user object and a user_is_admin flag to each request."""
+    """Add a user object and a user_is_admin flag to each request."""
 
-  def process_request(self, request):
-    request.user = auth_utils.get_current_user()
-    request.user_is_admin = auth_utils.is_current_user_admin()
+    def process_request(self, request):
+        request.user = auth_utils.get_current_user()
+        request.user_is_admin = auth_utils.is_current_user_admin()
 
-    # Update the cached value of the current user's Account
-    account = None
-    if request.user is not None:
-      account = models.Account.get_account_for_user(request.user)
-    models.Account.current_user_account = account
+        # Update the cached value of the current user's Account
+        account = None
+        if request.user is not None:
+            account = models.Account.get_account_for_user(request.user)
+        models.Account.current_user_account = account
 
 
 class PropagateExceptionMiddleware(object):
-  """Catch exceptions, log them and return a friendly error message.
+    """Catch exceptions, log them and return a friendly error message.
      Disables itself in DEBUG mode.
   """
 
-  def _text_requested(self, request):
-    """Returns True if a text/plain response is requested."""
-    # We could use a better heuristics that takes multiple
-    # media_ranges and quality factors into account. For now we return
-    # True iff 'text/plain' is the only media range the request
-    # accepts.
-    media_ranges = request.META.get('HTTP_ACCEPT', '').split(',')
-    return len(media_ranges) == 1 and media_ranges[0] == 'text/plain'
+    def _text_requested(self, request):
+        """Returns True if a text/plain response is requested."""
+        # We could use a better heuristics that takes multiple
+        # media_ranges and quality factors into account. For now we return
+        # True iff 'text/plain' is the only media range the request
+        # accepts.
+        media_ranges = request.META.get("HTTP_ACCEPT", "").split(",")
+        return len(media_ranges) == 1 and media_ranges[0] == "text/plain"
 
-
-  def process_exception(self, request, exception):
-    if settings.DEBUG or isinstance(exception, Http404):
-      return None
-    if isinstance(exception, apiproxy_errors.CapabilityDisabledError):
-      msg = ('Rietveld: App Engine is undergoing maintenance. '
-             'Please try again in a while.')
-      status = 503
-    elif isinstance(exception, (DeadlineExceededError, MemoryError)):
-      msg = ('Rietveld is too hungry at the moment.'
-             'Please try again in a while.')
-      status = 503
-    else:
-      msg = 'Unhandled exception.'
-      status = 500
-    logging.exception('%s: ' % exception.__class__.__name__)
-    technical = '%s [%s]' % (exception, exception.__class__.__name__)
-    if self._text_requested(request):
-      content = '%s\n\n%s\n' % (msg, technical)
-      content_type = 'text/plain'
-    else:
-      tpl = loader.get_template('exception.html')
-      ctx = Context({'msg': msg, 'technical': technical})
-      content = tpl.render(ctx)
-      content_type = 'text/html'
-    return HttpResponse(content, status=status, content_type=content_type)
+    def process_exception(self, request, exception):
+        if settings.DEBUG or isinstance(exception, Http404):
+            return None
+        if isinstance(exception, apiproxy_errors.CapabilityDisabledError):
+            msg = (
+                "Rietveld: App Engine is undergoing maintenance. "
+                "Please try again in a while."
+            )
+            status = 503
+        elif isinstance(exception, (DeadlineExceededError, MemoryError)):
+            msg = "Rietveld is too hungry at the moment." "Please try again in a while."
+            status = 503
+        else:
+            msg = "Unhandled exception."
+            status = 500
+        logging.exception("%s: " % exception.__class__.__name__)
+        technical = "%s [%s]" % (exception, exception.__class__.__name__)
+        if self._text_requested(request):
+            content = "%s\n\n%s\n" % (msg, technical)
+            content_type = "text/plain"
+        else:
+            tpl = loader.get_template("exception.html")
+            ctx = Context({"msg": msg, "technical": technical})
+            content = tpl.render(ctx)
+            content_type = "text/html"
+        return HttpResponse(content, status=status, content_type=content_type)
 
 
 class RedirectToHTTPSMiddleware(object):
-  """Redirect HTTP requests to the equivalent HTTPS resource."""
-  def process_request(self, request):
-    is_cron = request.META.get('HTTP_X_APPENGINE_CRON', '') == 'true'
-    if settings.DEBUG or request.method == 'POST' or is_cron:
-      return
-    if not request.is_secure():
-      host = request.get_host().split(':')[0]
-      return HttpResponsePermanentRedirect(
-          'https://%s%s' % (host, request.get_full_path()))
+    """Redirect HTTP requests to the equivalent HTTPS resource."""
+
+    def process_request(self, request):
+        is_cron = request.META.get("HTTP_X_APPENGINE_CRON", "") == "true"
+        if settings.DEBUG or request.method == "POST" or is_cron:
+            return
+        if not request.is_secure():
+            host = request.get_host().split(":")[0]
+            return HttpResponsePermanentRedirect(
+                "https://%s%s" % (host, request.get_full_path())
+            )

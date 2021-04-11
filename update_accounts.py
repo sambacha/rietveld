@@ -12,7 +12,7 @@
 
 from google.appengine.ext import ndb
 
-from codereview import models
+from .codereview import models
 
 
 def fetch_accounts():
@@ -29,8 +29,9 @@ def fetch_accounts():
             last = account
         if last is None:
             break
-        results = models.Account.query().filter(
-            models.Account.key > last.key).fetch(100)
+        results = (
+            models.Account.query().filter(models.Account.key > last.key).fetch(100)
+        )
     return accounts
 
 
@@ -41,7 +42,7 @@ def find_duplicates(accounts):
         if len(entries) > 1:
             # update accounts, except the fist: it's the lucky one
             for num, account in enumerate(entries[1:]):
-                account.nickname = '%s%d' % (account.nickname, num+1)
+                account.nickname = "%s%d" % (account.nickname, num + 1)
                 account.lower_nickname = account.nickname.lower()
                 account.fresh = True  # display "change nickname..."
                 tbd.append(account)
@@ -50,13 +51,13 @@ def find_duplicates(accounts):
 
 def run():
     accounts = fetch_accounts()
-    print '%d accounts fetched' % len(accounts)
+    print("%d accounts fetched" % len(accounts))
 
     tbd = find_duplicates(accounts)
-    print 'Updating %d accounts' % len(tbd)
+    print("Updating %d accounts" % len(tbd))
 
     ndb.put_multi(tbd)
 
-    print 'Updated accounts:'
+    print("Updated accounts:")
     for account in tbd:
-        print ' %s' % account.email
+        print(" %s" % account.email)

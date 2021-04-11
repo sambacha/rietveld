@@ -47,44 +47,28 @@ import difflib
 import re
 
 # Tag to begin a diff chunk.
-BEGIN_TAG = "<span class=\"%s\">"
+BEGIN_TAG = '<span class="%s">'
 # Tag to end a diff block.
 END_TAG = "</span>"
 # Tag used for visual tab indication.
-TAB_TAG = "<span class=\"visualtab\">&raquo;</span>"
+TAB_TAG = '<span class="visualtab">&raquo;</span>'
 # Tag used for trailing space indication.
-TRAILING_SPACE_TAG = "<span class=\"visualspace\">&middot;</span>"
+TRAILING_SPACE_TAG = '<span class="visualspace">&middot;</span>'
 # Color scheme to govern the display properties of diff blocks and matching
 # blocks. Each value e.g. 'oldlight' corresponds to a CSS style.
 COLOR_SCHEME = {
-  'old': {
-          'match':      'oldlight',
-          'diff':       'olddark',
-          'bckgrnd':    'oldlight',
-         },
-  'new': {
-          'match':      'newlight',
-          'diff':       'newdark',
-          'bckgrnd':    'newlight',
-         },
-  'oldmove': {
-          'match':      'movelight',
-          'diff':       'oldmovedark',
-          'bckgrnd':    'movelight'
-  },
-  'newmove': {
-          'match':      'newlight',
-          'diff':       'newdark',
-          'bckgrnd':    'newlight'
-  },
+    "old": {"match": "oldlight", "diff": "olddark", "bckgrnd": "oldlight",},
+    "new": {"match": "newlight", "diff": "newdark", "bckgrnd": "newlight",},
+    "oldmove": {"match": "movelight", "diff": "oldmovedark", "bckgrnd": "movelight"},
+    "newmove": {"match": "newlight", "diff": "newdark", "bckgrnd": "newlight"},
 }
 # Regular expressions to tokenize lines. Default is 'd'.
 EXPRS = {
-         'a': r'(\w+|[^\w\s]+|\s+)',
-         'b': r'([A-Za-z0-9]+|[^A-Za-z0-9])',
-         'c': r'([A-Za-z0-9_]+|[^A-Za-z0-9_])',
-         'd': r'([^\W_]+|[\W_])',
-        }
+    "a": r"(\w+|[^\w\s]+|\s+)",
+    "b": r"([A-Za-z0-9]+|[^A-Za-z0-9])",
+    "c": r"([A-Za-z0-9_]+|[^A-Za-z0-9_])",
+    "d": r"([^\W_]+|[\W_])",
+}
 # Maximum total characters in old and new lines for doing intra-region diffs.
 # Intra-region diff for larger regions is hard to comprehend and wastes CPU
 # time.
@@ -92,7 +76,7 @@ MAX_TOTAL_LEN = 10000
 
 
 def _ExpandTabs(text, column, tabsize, mark_tabs=False):
-  """Expand tab characters in a string into spaces.
+    """Expand tab characters in a string into spaces.
 
   Args:
     text: a string containing tab characters.
@@ -104,36 +88,36 @@ def _ExpandTabs(text, column, tabsize, mark_tabs=False):
 
   Note that calling _ExpandTabs with mark_tabs=True is not idempotent.
   """
-  expanded = ""
-  while True:
-    tabpos = text.find("\t")
-    if tabpos < 0:
-      break
-    fillwidth = tabsize - (tabpos + column) % tabsize
-    column += tabpos + fillwidth
-    if mark_tabs:
-      fill = "\t" + " " * (fillwidth - 1)
-    else:
-      fill = " " * fillwidth
-    expanded += text[0:tabpos] + fill
-    text = text[tabpos+1:]
-  return expanded + text
+    expanded = ""
+    while True:
+        tabpos = text.find("\t")
+        if tabpos < 0:
+            break
+        fillwidth = tabsize - (tabpos + column) % tabsize
+        column += tabpos + fillwidth
+        if mark_tabs:
+            fill = "\t" + " " * (fillwidth - 1)
+        else:
+            fill = " " * fillwidth
+        expanded += text[0:tabpos] + fill
+        text = text[tabpos + 1 :]
+    return expanded + text
 
 
 def TryDecode(text):
-  """Takes either a str or unicode instance and tries to return an unicode
+    """Takes either a str or unicode instance and tries to return an unicode
   instance.
 
   It only works on best effort.
   """
-  try:
-    return unicode(text, "utf8")
-  except (TypeError, UnicodeDecodeError):
-    return text
+    try:
+        return str(text, "utf8")
+    except (TypeError, UnicodeDecodeError):
+        return text
 
 
 def Break(text, offset=0, limit=80, brk="\n     ", tabsize=8, mark_tabs=False):
-  """Break text into lines.
+    """Break text into lines.
 
   Break text, which begins at column offset, each time it reaches
   column limit.
@@ -155,38 +139,38 @@ def Break(text, offset=0, limit=80, brk="\n     ", tabsize=8, mark_tabs=False):
 
   A trailing newline is always stripped from the input first.
   """
-  assert tabsize > 0, tabsize
-  has_newline = False
-  if text.endswith("\n"):
-    text = text[:-1]
-    has_newline = True
-  text = TryDecode(text)
-  # Expand all tabs.
-  # If mark_tabs is true, we retain one \t character as a marker during
-  # expansion so that we later replace it with an HTML snippet.
-  text = _ExpandTabs(text, offset, tabsize, mark_tabs)
-  # Perform wrapping.
-  if len(text) > limit - offset:
-    parts, text = [text[0:limit-offset]], text[limit-offset:]
-    while len(text) > limit:
-      parts.append(text[0:limit])
-      text = text[limit:]
-    parts.append(text)
-    text = brk.join([cgi.escape(p) for p in parts])
-  else:
-    text = cgi.escape(text)
-  # Colorize tab markers
-  text = text.replace("\t", TAB_TAG)
-  if has_newline:
-      s_text = text.rstrip()
-      text = s_text + (TRAILING_SPACE_TAG * (len(text) - len(s_text)))
-  if isinstance(text, unicode):
-    return text.encode("utf-8", "replace")
-  return text
+    assert tabsize > 0, tabsize
+    has_newline = False
+    if text.endswith("\n"):
+        text = text[:-1]
+        has_newline = True
+    text = TryDecode(text)
+    # Expand all tabs.
+    # If mark_tabs is true, we retain one \t character as a marker during
+    # expansion so that we later replace it with an HTML snippet.
+    text = _ExpandTabs(text, offset, tabsize, mark_tabs)
+    # Perform wrapping.
+    if len(text) > limit - offset:
+        parts, text = [text[0 : limit - offset]], text[limit - offset :]
+        while len(text) > limit:
+            parts.append(text[0:limit])
+            text = text[limit:]
+        parts.append(text)
+        text = brk.join([cgi.escape(p) for p in parts])
+    else:
+        text = cgi.escape(text)
+    # Colorize tab markers
+    text = text.replace("\t", TAB_TAG)
+    if has_newline:
+        s_text = text.rstrip()
+        text = s_text + (TRAILING_SPACE_TAG * (len(text) - len(s_text)))
+    if isinstance(text, str):
+        return text.encode("utf-8", "replace")
+    return text
 
 
 def CompactBlocks(blocks):
-  """Compacts adjacent code blocks.
+    """Compacts adjacent code blocks.
 
   In many cases 2 adjacent blocks can be merged into one. This allows
   to do some further processing on those blocks.
@@ -201,22 +185,22 @@ def CompactBlocks(blocks):
     [(0, 2), (2, 8), (10, 5), (15, 0)]
     will produce the output [(0, 15), (15, 0)].
   """
-  if len(blocks) == 1:
-    return blocks
-  result = [blocks[0]]
-  for block in blocks[1:-1]:
-    last_start, last_len = result[-1]
-    curr_start, curr_len = block
-    if last_start + last_len == curr_start:
-      result[-1] = last_start, last_len + curr_len
-    else:
-      result.append(block)
-  result.append(blocks[-1])
-  return result
+    if len(blocks) == 1:
+        return blocks
+    result = [blocks[0]]
+    for block in blocks[1:-1]:
+        last_start, last_len = result[-1]
+        curr_start, curr_len = block
+        if last_start + last_len == curr_start:
+            result[-1] = last_start, last_len + curr_len
+        else:
+            result.append(block)
+    result.append(blocks[-1])
+    return result
 
 
 def FilterBlocks(blocks, filter_func):
-  """Gets rid of any blocks if filter_func evaluates false for them.
+    """Gets rid of any blocks if filter_func evaluates false for them.
 
   Args:
     blocks: [(offset1, offset2, size), ...]; must have at least 1 entry
@@ -227,14 +211,14 @@ def FilterBlocks(blocks, filter_func):
     A list with the same structure with entries for which filter_func()
     returns false removed.  However, the last block is always included.
   """
-  # We retain the 'special' block at the end.
-  res = [b for b in blocks[:-1] if filter_func(b)]
-  res.append(blocks[-1])
-  return res
+    # We retain the 'special' block at the end.
+    res = [b for b in blocks[:-1] if filter_func(b)]
+    res.append(blocks[-1])
+    return res
 
 
-def GetDiffParams(expr='d', min_match_ratio=0.6, min_match_size=2, dbg=False):
-  """Returns a tuple of various parameters which affect intra region diffs.
+def GetDiffParams(expr="d", min_match_ratio=0.6, min_match_size=2, dbg=False):
+    """Returns a tuple of various parameters which affect intra region diffs.
 
   Args:
     expr: regular expression id to use to identify 'words' in the intra region
@@ -250,14 +234,14 @@ def GetDiffParams(expr='d', min_match_ratio=0.6, min_match_size=2, dbg=False):
     customize diff. It can be passed to functions like WordDiff and
     IntraLineDiff.
   """
-  assert expr in EXPRS
-  assert min_match_size in xrange(1, 5)
-  assert min_match_ratio > 0.0 and min_match_ratio < 1.0
-  return (expr, min_match_ratio, min_match_size, dbg)
+    assert expr in EXPRS
+    assert min_match_size in range(1, 5)
+    assert min_match_ratio > 0.0 and min_match_ratio < 1.0
+    return (expr, min_match_ratio, min_match_size, dbg)
 
 
 def CanDoIRDiff(old_lines, new_lines):
-  """Tells if it would be worth computing the intra region diff.
+    """Tells if it would be worth computing the intra region diff.
 
   Calculating IR diff is costly and is usually helpful only for small regions.
   We use a heuristic that if the total number of characters is more than a
@@ -273,13 +257,14 @@ def CanDoIRDiff(old_lines, new_lines):
 
   TODO: Let GetDiffParams handle MAX_TOTAL_LEN param also.
   """
-  total_chars = (sum(len(line) for line in old_lines) +
-                 sum(len(line) for line in new_lines))
-  return total_chars <= MAX_TOTAL_LEN
+    total_chars = sum(len(line) for line in old_lines) + sum(
+        len(line) for line in new_lines
+    )
+    return total_chars <= MAX_TOTAL_LEN
 
 
 def WordDiff(line1, line2, diff_params):
-  """Returns blocks with positions indiciating word level diffs.
+    """Returns blocks with positions indiciating word level diffs.
 
   Args:
     line1: string representing the left part of the diff
@@ -293,62 +278,63 @@ def WordDiff(line1, line2, diff_params):
               and the last block is always (len(line1), len(line2), 0)
       ratio: a float giving the diff ratio computed by SequenceMatcher.
   """
-  match_expr, min_match_ratio, min_match_size, _ = diff_params
-  exp = EXPRS[match_expr]
-  # Strings may have been left undecoded up to now. Assume UTF-8.
-  line1 = TryDecode(line1)
-  line2 = TryDecode(line2)
+    match_expr, min_match_ratio, min_match_size, _ = diff_params
+    exp = EXPRS[match_expr]
+    # Strings may have been left undecoded up to now. Assume UTF-8.
+    line1 = TryDecode(line1)
+    line2 = TryDecode(line2)
 
-  a = re.findall(exp, line1, re.U)
-  b = re.findall(exp, line2, re.U)
-  s = difflib.SequenceMatcher(None, a, b)
-  matching_blocks = s.get_matching_blocks()
-  ratio = s.ratio()
-  # Don't show intra region diffs if both lines are too different and there is
-  # more than one block of difference. If there is only one change then we
-  # still show the intra region diff regardless of how different the blocks
-  # are.
-  # Note: We compare len(matching_blocks) with 3 because one block of change
-  # results in 2 matching blocks. We add the one special block and we get 3
-  # matching blocks per one block of change.
-  if ratio < min_match_ratio and len(matching_blocks) > 3:
-    return ([(0, 0, 0)], ratio)
-  # For now convert to character level blocks because we already have
-  # the code to deal with folding across lines for character blocks.
-  # Create arrays lena an lenb which have cumulative word lengths
-  # corresponding to word positions in a and b
-  lena = []
-  last = 0
-  for w in a:
-    lena.append(last)
-    last += len(w)
-  lenb = []
-  last = 0
-  for w in b:
-    lenb.append(last)
-    last += len(w)
-  lena.append(len(line1))
-  lenb.append(len(line2))
-  # Convert to character blocks
-  blocks = []
-  for s1, s2, blen in matching_blocks[:-1]:
-    apos = lena[s1]
-    bpos = lenb[s2]
-    block_len = lena[s1+blen] - apos
-    blocks.append((apos, bpos, block_len))
-  # Recreate the special block.
-  blocks.append((len(line1), len(line2), 0))
-  # Filter any matching blocks which are smaller than the desired threshold.
-  # We don't remove matching blocks with only a newline character as doing so
-  # results in showing the matching newline character as non matching which
-  # doesn't look good.
-  blocks = FilterBlocks(blocks, lambda b: (b[2] >= min_match_size or
-                                           line1[b[0]:b[0]+b[2]] == '\n'))
-  return (blocks, ratio)
+    a = re.findall(exp, line1, re.U)
+    b = re.findall(exp, line2, re.U)
+    s = difflib.SequenceMatcher(None, a, b)
+    matching_blocks = s.get_matching_blocks()
+    ratio = s.ratio()
+    # Don't show intra region diffs if both lines are too different and there is
+    # more than one block of difference. If there is only one change then we
+    # still show the intra region diff regardless of how different the blocks
+    # are.
+    # Note: We compare len(matching_blocks) with 3 because one block of change
+    # results in 2 matching blocks. We add the one special block and we get 3
+    # matching blocks per one block of change.
+    if ratio < min_match_ratio and len(matching_blocks) > 3:
+        return ([(0, 0, 0)], ratio)
+    # For now convert to character level blocks because we already have
+    # the code to deal with folding across lines for character blocks.
+    # Create arrays lena an lenb which have cumulative word lengths
+    # corresponding to word positions in a and b
+    lena = []
+    last = 0
+    for w in a:
+        lena.append(last)
+        last += len(w)
+    lenb = []
+    last = 0
+    for w in b:
+        lenb.append(last)
+        last += len(w)
+    lena.append(len(line1))
+    lenb.append(len(line2))
+    # Convert to character blocks
+    blocks = []
+    for s1, s2, blen in matching_blocks[:-1]:
+        apos = lena[s1]
+        bpos = lenb[s2]
+        block_len = lena[s1 + blen] - apos
+        blocks.append((apos, bpos, block_len))
+    # Recreate the special block.
+    blocks.append((len(line1), len(line2), 0))
+    # Filter any matching blocks which are smaller than the desired threshold.
+    # We don't remove matching blocks with only a newline character as doing so
+    # results in showing the matching newline character as non matching which
+    # doesn't look good.
+    blocks = FilterBlocks(
+        blocks, lambda b: (b[2] >= min_match_size or line1[b[0] : b[0] + b[2]] == "\n")
+    )
+    return (blocks, ratio)
 
 
 def IntraLineDiff(line1, line2, diff_params, diff_func=WordDiff):
-  """Computes intraline diff blocks.
+    """Computes intraline diff blocks.
 
   Args:
     line1: string representing the left part of the diff
@@ -361,30 +347,31 @@ def IntraLineDiff(line1, line2, diff_params, diff_func=WordDiff):
     Each element of the tuple is an array of (start_pos, length)
     tuples denoting a diff block.
   """
-  blocks, ratio = diff_func(line1, line2, diff_params)
-  blocks1 = [(start1, length) for (start1, start2, length) in blocks]
-  blocks2 = [(start2, length) for (start1, start2, length) in blocks]
+    blocks, ratio = diff_func(line1, line2, diff_params)
+    blocks1 = [(start1, length) for (start1, start2, length) in blocks]
+    blocks2 = [(start2, length) for (start1, start2, length) in blocks]
 
-  return (blocks1, blocks2, ratio)
+    return (blocks1, blocks2, ratio)
 
 
 def DumpDiff(blocks, line1, line2):
-  """Helper function to debug diff related problems.
+    """Helper function to debug diff related problems.
 
   Args:
     blocks: [(offset1, offset2, size), ...]
     line1: string representing the left part of the diff
     line2: string representing the right part of the diff
   """
-  for offset1, offset2, size in blocks:
-    print offset1, offset2, size
-    print offset1, size, ":  ", line1[offset1:offset1+size]
-    print offset2, size, ":  ", line2[offset2:offset2+size]
+    for offset1, offset2, size in blocks:
+        print(offset1, offset2, size)
+        print(offset1, size, ":  ", line1[offset1 : offset1 + size])
+        print(offset2, size, ":  ", line2[offset2 : offset2 + size])
 
 
-def RenderIntraLineDiff(blocks, line, tag, dbg_info=None, limit=80, indent=5,
-                        tabsize=8, mark_tabs=False):
-  """Renders the diff blocks returned by IntraLineDiff function.
+def RenderIntraLineDiff(
+    blocks, line, tag, dbg_info=None, limit=80, indent=5, tabsize=8, mark_tabs=False
+):
+    """Renders the diff blocks returned by IntraLineDiff function.
 
   Args:
     blocks: [(start_pos,  size), ...]
@@ -402,34 +389,55 @@ def RenderIntraLineDiff(blocks, line, tag, dbg_info=None, limit=80, indent=5,
     the input 'line'. Second element tells if the line has a matching
     newline character.
   """
-  res = ""
-  prev_start, prev_len = 0, 0
-  has_newline = False
-  debug_info = dbg_info
-  if dbg_info:
-    debug_info += "\nBlock Count: %d\nBlocks: " % (len(blocks) - 1)
-  for curr_start, curr_len in blocks:
-    if dbg_info and curr_len > 0:
-      debug_info += Break(
-          "\n(%d, %d):|%s|" %
-          (curr_start, curr_len, line[curr_start:curr_start+curr_len]),
-           limit, indent, tabsize, mark_tabs)
-    res += FoldBlock(line, prev_start + prev_len, curr_start, limit, indent,
-                     tag, 'diff', tabsize, mark_tabs)
-    res += FoldBlock(line, curr_start, curr_start + curr_len, limit, indent,
-                     tag, 'match', tabsize, mark_tabs)
-    # TODO: This test should be out of loop rather than inside. Once we
-    # filter out some junk from blocks (e.g. some empty blocks) we should do
-    # this test only on the last matching block.
-    if line[curr_start:curr_start+curr_len].endswith('\n'):
-      has_newline = True
-    prev_start, prev_len = curr_start, curr_len
-  return (res, has_newline, debug_info)
+    res = ""
+    prev_start, prev_len = 0, 0
+    has_newline = False
+    debug_info = dbg_info
+    if dbg_info:
+        debug_info += "\nBlock Count: %d\nBlocks: " % (len(blocks) - 1)
+    for curr_start, curr_len in blocks:
+        if dbg_info and curr_len > 0:
+            debug_info += Break(
+                "\n(%d, %d):|%s|"
+                % (curr_start, curr_len, line[curr_start : curr_start + curr_len]),
+                limit,
+                indent,
+                tabsize,
+                mark_tabs,
+            )
+        res += FoldBlock(
+            line,
+            prev_start + prev_len,
+            curr_start,
+            limit,
+            indent,
+            tag,
+            "diff",
+            tabsize,
+            mark_tabs,
+        )
+        res += FoldBlock(
+            line,
+            curr_start,
+            curr_start + curr_len,
+            limit,
+            indent,
+            tag,
+            "match",
+            tabsize,
+            mark_tabs,
+        )
+        # TODO: This test should be out of loop rather than inside. Once we
+        # filter out some junk from blocks (e.g. some empty blocks) we should do
+        # this test only on the last matching block.
+        if line[curr_start : curr_start + curr_len].endswith("\n"):
+            has_newline = True
+        prev_start, prev_len = curr_start, curr_len
+    return (res, has_newline, debug_info)
 
 
-def FoldBlock(src, start, end, limit, indent, tag, btype, tabsize=8,
-              mark_tabs=False):
-  """Folds and renders a block.
+def FoldBlock(src, start, end, limit, indent, tag, btype, tabsize=8, mark_tabs=False):
+    """Folds and renders a block.
 
   Args:
     src: line of code
@@ -445,32 +453,32 @@ def FoldBlock(src, start, end, limit, indent, tag, btype, tabsize=8,
   Returns:
     A string representing the rendered block.
   """
-  text = src[start:end]
-  # We ignore newlines because we do newline management ourselves.
-  # Any other new lines with at the end will be stripped off by the Break
-  # method.
-  if start >= end or text == '\n':
-    return ""
-  fbegin, lend, nl_plus_indent = GetTags(tag, btype, indent)
-  # 'bol' is beginning of line.
-  # The text we care about begins at byte offset start
-  # but if there are tabs it will have a larger column
-  # offset.  Use len(_ExpandTabs()) to find out how many
-  # columns the starting prefix occupies.
-  offset_from_bol = len(_ExpandTabs(src[0:start], 0, tabsize)) % limit
-  brk = lend + nl_plus_indent + fbegin
-  text = Break(text, offset_from_bol, limit, brk, tabsize, mark_tabs)
-  if text:
-    text = fbegin + text + lend
-  # If this is the first block of the line and this is not the first line then
-  # insert newline + indent.
-  if offset_from_bol == 0 and not start == 0:
-    text = nl_plus_indent + text
-  return text
+    text = src[start:end]
+    # We ignore newlines because we do newline management ourselves.
+    # Any other new lines with at the end will be stripped off by the Break
+    # method.
+    if start >= end or text == "\n":
+        return ""
+    fbegin, lend, nl_plus_indent = GetTags(tag, btype, indent)
+    # 'bol' is beginning of line.
+    # The text we care about begins at byte offset start
+    # but if there are tabs it will have a larger column
+    # offset.  Use len(_ExpandTabs()) to find out how many
+    # columns the starting prefix occupies.
+    offset_from_bol = len(_ExpandTabs(src[0:start], 0, tabsize)) % limit
+    brk = lend + nl_plus_indent + fbegin
+    text = Break(text, offset_from_bol, limit, brk, tabsize, mark_tabs)
+    if text:
+        text = fbegin + text + lend
+    # If this is the first block of the line and this is not the first line then
+    # insert newline + indent.
+    if offset_from_bol == 0 and not start == 0:
+        text = nl_plus_indent + text
+    return text
 
 
 def GetTags(tag, btype, indent):
-  """Returns various tags for rendering diff blocks.
+    """Returns various tags for rendering diff blocks.
 
   Args:
     tag: a key from COLOR_SCHEME
@@ -479,19 +487,19 @@ def GetTags(tag, btype, indent):
   Returns
     A 3 tuple (begin_tag, end_tag, formatted_indent_block)
   """
-  assert tag in COLOR_SCHEME
-  assert btype in ['match', 'diff']
-  fbegin = BEGIN_TAG % COLOR_SCHEME[tag][btype]
-  bbegin = BEGIN_TAG % COLOR_SCHEME[tag]['bckgrnd']
-  lend = END_TAG
-  nl_plus_indent = '\n'
-  if indent > 0:
-    nl_plus_indent += bbegin + cgi.escape(" "*indent) + lend
-  return fbegin, lend, nl_plus_indent
+    assert tag in COLOR_SCHEME
+    assert btype in ["match", "diff"]
+    fbegin = BEGIN_TAG % COLOR_SCHEME[tag][btype]
+    bbegin = BEGIN_TAG % COLOR_SCHEME[tag]["bckgrnd"]
+    lend = END_TAG
+    nl_plus_indent = "\n"
+    if indent > 0:
+        nl_plus_indent += bbegin + cgi.escape(" " * indent) + lend
+    return fbegin, lend, nl_plus_indent
 
 
 def ConvertToSingleLine(lines):
-  """Transforms a sequence of strings into a single line.
+    """Transforms a sequence of strings into a single line.
 
   Returns the state that can be used to reconstruct the original lines with
   the newline separators placed at the original place.
@@ -509,21 +517,24 @@ def ConvertToSingleLine(lines):
     of each line in the final converted string. 'blocks' is an array of blocks
     for each line of code. These blocks are added using MarkBlock function.
   """
-  state = []
-  total_length = 0
-  for l in lines:
-    total_length += len(l)
-    # TODO: Use a tuple instead.
-    state.append({'pos': total_length, # the line split point
-                  'blocks': [],        # blocks which belong to this line
-                 })
-  result = "".join(lines)
-  assert len(state) == len(lines)
-  return (result, state)
+    state = []
+    total_length = 0
+    for l in lines:
+        total_length += len(l)
+        # TODO: Use a tuple instead.
+        state.append(
+            {
+                "pos": total_length,  # the line split point
+                "blocks": [],  # blocks which belong to this line
+            }
+        )
+    result = "".join(lines)
+    assert len(state) == len(lines)
+    return (result, state)
 
 
 def MarkBlock(state, begin, end):
-  """Marks a block on a region such that it doesn't cross line boundaries.
+    """Marks a block on a region such that it doesn't cross line boundaries.
 
   It is an operation that can be performed on the single line which was
   returned by the ConvertToSingleLine function. This operation marks arbitrary
@@ -540,26 +551,26 @@ def MarkBlock(state, begin, end):
   Returns:
     None.
   """
-  # TODO: Make sure already existing blocks don't overlap
-  if begin == end:
-    return
-  last_pos = 0
-  for entry in state:
-    pos = entry['pos']
-    if begin >= last_pos and begin < pos:
-      if end < pos:
-        # block doesn't cross any line boundary
-        entry['blocks'].append((begin, end))
-      else:
-        # block crosses the line boundary
-        entry['blocks'].append((begin, pos))
-        MarkBlock(state, pos, end)
-      break
-    last_pos = pos
+    # TODO: Make sure already existing blocks don't overlap
+    if begin == end:
+        return
+    last_pos = 0
+    for entry in state:
+        pos = entry["pos"]
+        if begin >= last_pos and begin < pos:
+            if end < pos:
+                # block doesn't cross any line boundary
+                entry["blocks"].append((begin, end))
+            else:
+                # block crosses the line boundary
+                entry["blocks"].append((begin, pos))
+                MarkBlock(state, pos, end)
+            break
+        last_pos = pos
 
 
 def GetBlocks(state):
-  """Returns all the blocks corresponding to the lines in the region.
+    """Returns all the blocks corresponding to the lines in the region.
 
   Args:
     state: the state returned by ConvertToSingleLine().
@@ -568,21 +579,21 @@ def GetBlocks(state):
     An array of [(start_pos, length), ..] with an entry for each line in the
     region.
   """
-  result = []
-  last_pos = 0
-  for entry in state:
-    pos = entry['pos']
-    # Calculate block start points from the beginning of individual lines.
-    blocks = [(s[0]-last_pos, s[1]-s[0]) for s in entry['blocks']]
-    # Add one end marker block.
-    blocks.append((pos-last_pos, 0))
-    result.append(blocks)
-    last_pos = pos
-  return result
+    result = []
+    last_pos = 0
+    for entry in state:
+        pos = entry["pos"]
+        # Calculate block start points from the beginning of individual lines.
+        blocks = [(s[0] - last_pos, s[1] - s[0]) for s in entry["blocks"]]
+        # Add one end marker block.
+        blocks.append((pos - last_pos, 0))
+        result.append(blocks)
+        last_pos = pos
+    return result
 
 
 def IntraRegionDiff(old_lines, new_lines, diff_params):
-  """Computes intra region diff.
+    """Computes intra region diff.
 
   Args:
     old_lines: array of strings
@@ -593,22 +604,22 @@ def IntraRegionDiff(old_lines, new_lines, diff_params):
     A tuple (old_blocks, new_blocks) containing matching blocks for old and new
     lines.
   """
-  old_line, old_state = ConvertToSingleLine(old_lines)
-  new_line, new_state = ConvertToSingleLine(new_lines)
-  old_blocks, new_blocks, ratio = IntraLineDiff(old_line, new_line, diff_params)
-  for begin, length in old_blocks:
-    MarkBlock(old_state, begin, begin+length)
-  old_blocks = GetBlocks(old_state)
+    old_line, old_state = ConvertToSingleLine(old_lines)
+    new_line, new_state = ConvertToSingleLine(new_lines)
+    old_blocks, new_blocks, ratio = IntraLineDiff(old_line, new_line, diff_params)
+    for begin, length in old_blocks:
+        MarkBlock(old_state, begin, begin + length)
+    old_blocks = GetBlocks(old_state)
 
-  for begin, length in new_blocks:
-    MarkBlock(new_state, begin, begin+length)
-  new_blocks = GetBlocks(new_state)
+    for begin, length in new_blocks:
+        MarkBlock(new_state, begin, begin + length)
+    new_blocks = GetBlocks(new_state)
 
-  return (old_blocks, new_blocks, ratio)
+    return (old_blocks, new_blocks, ratio)
 
 
 def NormalizeBlocks(blocks, line):
-  """Normalizes block representation of an intra line diff.
+    """Normalizes block representation of an intra line diff.
 
   One diff can have multiple representations. Some times the diff returned by
   the difflib for similar text sections is different even within same region.
@@ -644,32 +655,41 @@ def NormalizeBlocks(blocks, line):
     An array of (offset, len) tuples representing the same diff but in
     normalized form.
   """
-  result = []
-  prev_start, prev_len = blocks[0]
-  for curr_start, curr_len in blocks[1:]:
-    # Note: nm_ is a prefix for non matching and m_ is a prefix for matching.
-    m_len, nm_len = prev_len, curr_start - (prev_start+prev_len)
-    # This if condition checks if matching and non matching parts are greater
-    # than zero length and are comprised of spaces ONLY. The last condition
-    # deals with most of the observed cases of strange diffs.
-    # Note: curr_start - prev_start == m_l + nm_l
-    #       So line[prev_start:curr_start] == matching_part + non_matching_part.
-    text = line[prev_start:curr_start]
-    if m_len > 0 and nm_len > 0 and text == ' ' * len(text):
-      # Move the matching block towards the end i.e. normalize.
-      result.append((prev_start + nm_len, m_len))
-    else:
-      # Keep the existing matching block.
-      result.append((prev_start, prev_len))
-    prev_start, prev_len = curr_start, curr_len
-  result.append(blocks[-1])
-  assert len(result) == len(blocks)
-  return result
+    result = []
+    prev_start, prev_len = blocks[0]
+    for curr_start, curr_len in blocks[1:]:
+        # Note: nm_ is a prefix for non matching and m_ is a prefix for matching.
+        m_len, nm_len = prev_len, curr_start - (prev_start + prev_len)
+        # This if condition checks if matching and non matching parts are greater
+        # than zero length and are comprised of spaces ONLY. The last condition
+        # deals with most of the observed cases of strange diffs.
+        # Note: curr_start - prev_start == m_l + nm_l
+        #       So line[prev_start:curr_start] == matching_part + non_matching_part.
+        text = line[prev_start:curr_start]
+        if m_len > 0 and nm_len > 0 and text == " " * len(text):
+            # Move the matching block towards the end i.e. normalize.
+            result.append((prev_start + nm_len, m_len))
+        else:
+            # Keep the existing matching block.
+            result.append((prev_start, prev_len))
+        prev_start, prev_len = curr_start, curr_len
+    result.append(blocks[-1])
+    assert len(result) == len(blocks)
+    return result
 
 
-def RenderIntraRegionDiff(lines, diff_blocks, tag, ratio, limit=80, indent=5,
-                          tabsize=8, mark_tabs=False, dbg=False):
-  """Renders intra region diff for one side.
+def RenderIntraRegionDiff(
+    lines,
+    diff_blocks,
+    tag,
+    ratio,
+    limit=80,
+    indent=5,
+    tabsize=8,
+    mark_tabs=False,
+    dbg=False,
+):
+    """Renders intra region diff for one side.
 
   Args:
     lines: list of strings representing source code in the region
@@ -686,21 +706,23 @@ def RenderIntraRegionDiff(lines, diff_blocks, tag, ratio, limit=80, indent=5,
     A list of strings representing the rendered version of each item in input
     'lines'.
   """
-  result = []
-  dbg_info = None
-  if dbg:
-    dbg_info = 'Ratio: %.1f' % ratio
-  for line, blocks in zip(lines, diff_blocks):
-    blocks = NormalizeBlocks(blocks, line)
-    blocks = CompactBlocks(blocks)
-    diff = RenderIntraLineDiff(blocks,
-                               line,
-                               tag,
-                               dbg_info=dbg_info,
-                               limit=limit,
-                               indent=indent,
-                               tabsize=tabsize,
-                               mark_tabs=mark_tabs)
-    result.append(diff)
-  assert len(result) == len(lines)
-  return result
+    result = []
+    dbg_info = None
+    if dbg:
+        dbg_info = "Ratio: %.1f" % ratio
+    for line, blocks in zip(lines, diff_blocks):
+        blocks = NormalizeBlocks(blocks, line)
+        blocks = CompactBlocks(blocks)
+        diff = RenderIntraLineDiff(
+            blocks,
+            line,
+            tag,
+            dbg_info=dbg_info,
+            limit=limit,
+            indent=indent,
+            tabsize=tabsize,
+            mark_tabs=mark_tabs,
+        )
+        result.append(diff)
+    assert len(result) == len(lines)
+    return result

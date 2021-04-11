@@ -45,20 +45,21 @@ from google.appengine.ext import ndb
 from google.appengine.runtime import apiproxy_errors
 
 
-EMAIL_SCOPE = 'https://www.googleapis.com/auth/userinfo.email'
+EMAIL_SCOPE = "https://www.googleapis.com/auth/userinfo.email"
 
 
 class SecretKey(ndb.Model):
-  """Model for representing project secret keys."""
-  client_id = ndb.StringProperty(required=True, indexed=False)
-  client_secret = ndb.StringProperty(required=True, indexed=False)
-  additional_client_ids = ndb.StringProperty(repeated=True, indexed=False)
+    """Model for representing project secret keys."""
 
-  GLOBAL_KEY = '_global_config'
+    client_id = ndb.StringProperty(required=True, indexed=False)
+    client_secret = ndb.StringProperty(required=True, indexed=False)
+    additional_client_ids = ndb.StringProperty(repeated=True, indexed=False)
 
-  @classmethod
-  def set_config(cls, client_id, client_secret, additional_client_ids=None):
-    """Sets global config object using a Client ID and Secret.
+    GLOBAL_KEY = "_global_config"
+
+    @classmethod
+    def set_config(cls, client_id, client_secret, additional_client_ids=None):
+        """Sets global config object using a Client ID and Secret.
 
     Args:
       client_id: String containing Google APIs Client ID.
@@ -71,43 +72,49 @@ class SecretKey(ndb.Model):
     Returns:
       The inserted SecretKey object.
     """
-    additional_client_ids = additional_client_ids or []
-    config = cls(id=cls.GLOBAL_KEY,
-                 client_id=client_id, client_secret=client_secret,
-                 additional_client_ids=additional_client_ids)
-    config.put()
-    return config
+        additional_client_ids = additional_client_ids or []
+        config = cls(
+            id=cls.GLOBAL_KEY,
+            client_id=client_id,
+            client_secret=client_secret,
+            additional_client_ids=additional_client_ids,
+        )
+        config.put()
+        return config
 
-  @classmethod
-  def get_config(cls):
-    """Gets tuple of Client ID and Secret from global config object.
+    @classmethod
+    def get_config(cls):
+        """Gets tuple of Client ID and Secret from global config object.
 
     Returns:
       3-tuple containing the Client ID and Secret from the global config
           SecretKey object as well as a list of other allowed client IDs, if the
           config is in the datastore, else the tuple (None, None, []).
     """
-    config = cls.get_by_id(cls.GLOBAL_KEY)
-    if config is None:
-      return None, None, []
-    else:
-      return (config.client_id, config.client_secret,
-              config.additional_client_ids)
+        config = cls.get_by_id(cls.GLOBAL_KEY)
+        if config is None:
+            return None, None, []
+        else:
+            return (
+                config.client_id,
+                config.client_secret,
+                config.additional_client_ids,
+            )
 
 
 def _get_client_id(tries=3):
-  """Call oauth.get_client_id() and retry if it times out."""
-  for attempt in xrange(tries):
-    try:
-      return oauth.get_client_id(EMAIL_SCOPE)
-    except apiproxy_errors.DeadlineExceededError:
-      logging.error('get_client_id() timed out on attempt %r', attempt)
-      if attempt == tries - 1:
-        raise
+    """Call oauth.get_client_id() and retry if it times out."""
+    for attempt in range(tries):
+        try:
+            return oauth.get_client_id(EMAIL_SCOPE)
+        except apiproxy_errors.DeadlineExceededError:
+            logging.error("get_client_id() timed out on attempt %r", attempt)
+            if attempt == tries - 1:
+                raise
 
-  
+
 def get_current_rietveld_oauth_user():
-  """Gets the current OAuth 2.0 user associated with a request.
+    """Gets the current OAuth 2.0 user associated with a request.
 
   This user must be intending to reach this application, so we check the token
   info to verify this is the case.
@@ -116,27 +123,30 @@ def get_current_rietveld_oauth_user():
     A users.User object that was retrieved from the App Engine OAuth library if
         the token is valid, otherwise None.
   """
-  # TODO(dhermes): Address local environ here as well.
-  try:
-    current_client_id = _get_client_id()
-  except oauth.Error:
-    return
+    # TODO(dhermes): Address local environ here as well.
+    try:
+        current_client_id = _get_client_id()
+    except oauth.Error:
+        return
 
-  accepted_client_id, _, additional_client_ids = SecretKey.get_config()
-  if (accepted_client_id != current_client_id and
-      current_client_id not in additional_client_ids):
-    logging.debug('Client ID %r not intended for this application.',
-                  current_client_id)
-    return
+    accepted_client_id, _, additional_client_ids = SecretKey.get_config()
+    if (
+        accepted_client_id != current_client_id
+        and current_client_id not in additional_client_ids
+    ):
+        logging.debug(
+            "Client ID %r not intended for this application.", current_client_id
+        )
+        return
 
-  try:
-    return oauth.get_current_user(EMAIL_SCOPE)
-  except oauth.Error:
-    logging.warning('A Client ID was retrieved with no corresponsing user.')
+    try:
+        return oauth.get_current_user(EMAIL_SCOPE)
+    except oauth.Error:
+        logging.warning("A Client ID was retrieved with no corresponsing user.")
 
 
 def get_current_user():
-  """Gets the current user associated with a request.
+    """Gets the current user associated with a request.
 
   First tries to verify a user with the Users API (cookie-based auth), and then
   falls back to checking for an OAuth 2.0 user with a token minted for use with
@@ -146,33 +156,34 @@ def get_current_user():
     A users.User object that was retrieved from the App Engine Users or OAuth
         library if such a user can be determined, otherwise None.
   """
-  current_cookie_user = users.get_current_user()
-  if current_cookie_user is not None:
-    return current_cookie_user
-  return get_current_rietveld_oauth_user()
+    current_cookie_user = users.get_current_user()
+    if current_cookie_user is not None:
+        return current_cookie_user
+    return get_current_rietveld_oauth_user()
 
 
 class AnyAuthUserProperty(ndb.UserProperty):
-  """An extension of the UserProperty which also accepts OAuth users.
+    """An extension of the UserProperty which also accepts OAuth users.
 
   The default db.UserProperty only considers cookie-based Auth users.
   """
 
-  def _prepare_for_put(self, entity):
-    """Prepare to store value to DB, including supplying a default value.
+    def _prepare_for_put(self, entity):
+        """Prepare to store value to DB, including supplying a default value.
 
     NOTE: This is adapted from UserProperty.default_value but uses a different
     get_current_user() method.
     """
-    if (self._auto_current_user or
-        (self._auto_current_user_add and not self._has_value(entity))):
-      value = get_current_user()
-      if value is not None:
-        self._store_value(entity, value)
+        if self._auto_current_user or (
+            self._auto_current_user_add and not self._has_value(entity)
+        ):
+            value = get_current_user()
+            if value is not None:
+                self._store_value(entity, value)
 
 
 def is_current_user_admin():
-  """Determines if the current user associated with a request is an admin.
+    """Determines if the current user associated with a request is an admin.
 
   First tries to verify if the user is an admin with the Users API (cookie-based
   auth), and then falls back to checking for an OAuth 2.0 admin user with a
@@ -181,14 +192,14 @@ def is_current_user_admin():
   Returns:
     Boolean indicating whether or not the current user is an admin.
   """
-  cookie_user_is_admin = users.is_current_user_admin()
-  if cookie_user_is_admin:
-    return cookie_user_is_admin
+    cookie_user_is_admin = users.is_current_user_admin()
+    if cookie_user_is_admin:
+        return cookie_user_is_admin
 
-  # oauth.is_current_user_admin is not sufficient, we must first check that the
-  # OAuth 2.0 user has a token minted for this application.
-  rietveld_user = get_current_rietveld_oauth_user()
-  if rietveld_user is None:
-    return False
+    # oauth.is_current_user_admin is not sufficient, we must first check that the
+    # OAuth 2.0 user has a token minted for this application.
+    rietveld_user = get_current_rietveld_oauth_user()
+    if rietveld_user is None:
+        return False
 
-  return oauth.is_current_user_admin(EMAIL_SCOPE)
+    return oauth.is_current_user_admin(EMAIL_SCOPE)

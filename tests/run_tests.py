@@ -24,10 +24,10 @@ TESTS_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-  sys.argv.insert(1, 'discover')
-  sys.argv.insert(2, TESTS_DIR)
-  return unittest.main()
+    sys.argv.insert(1, "discover")
+    sys.argv.insert(2, TESTS_DIR)
+    return unittest.main()
 
 
-if __name__ == '__main__':
-  sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())

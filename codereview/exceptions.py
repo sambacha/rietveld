@@ -16,8 +16,8 @@
 
 
 class RietveldError(Exception):
-  """Base class for all exceptions in this application."""
+    """Base class for all exceptions in this application."""
 
 
 class FetchError(RietveldError):
-  """Exception raised when fetching of remote files fails."""
+    """Exception raised when fetching of remote files fails."""

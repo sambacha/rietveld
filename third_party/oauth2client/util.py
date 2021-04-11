@@ -17,36 +17,40 @@
 
 """Common utility library."""
 
-__author__ = ['rafek@google.com (Rafe Kaplan)',
-              'guido@google.com (Guido van Rossum)',
+__author__ = [
+    "rafek@google.com (Rafe Kaplan)",
+    "guido@google.com (Guido van Rossum)",
 ]
 __all__ = [
-  'positional',
+    "positional",
 ]
 
 import gflags
 import inspect
 import logging
 import types
-import urllib
-import urlparse
+import urllib.request, urllib.parse, urllib.error
+import urllib.parse
 
 try:
-  from urlparse import parse_qsl
+    from urllib.parse import parse_qsl
 except ImportError:
-  from cgi import parse_qsl
+    from cgi import parse_qsl
 
 logger = logging.getLogger(__name__)
 
 FLAGS = gflags.FLAGS
 
-gflags.DEFINE_enum('positional_parameters_enforcement', 'WARNING',
-    ['EXCEPTION', 'WARNING', 'IGNORE'],
-    'The action when an oauth2client.util.positional declaration is violated.')
+gflags.DEFINE_enum(
+    "positional_parameters_enforcement",
+    "WARNING",
+    ["EXCEPTION", "WARNING", "IGNORE"],
+    "The action when an oauth2client.util.positional declaration is violated.",
+)
 
 
 def positional(max_positional_args):
-  """A decorator to declare that only the first N arguments my be positional.
+    """A decorator to declare that only the first N arguments my be positional.
 
   This decorator makes it easy to support Python 3 style key-word only
   parameters. For example, in Python 3 it is possible to write:
@@ -111,32 +115,38 @@ def positional(max_positional_args):
     but only if the --positional_parameters_enforcement flag is set to
     'EXCEPTION'.
   """
-  def positional_decorator(wrapped):
-    def positional_wrapper(*args, **kwargs):
-      if len(args) > max_positional_args:
-        plural_s = ''
-        if max_positional_args != 1:
-          plural_s = 's'
-        message = '%s() takes at most %d positional argument%s (%d given)' % (
-            wrapped.__name__, max_positional_args, plural_s, len(args))
-        if FLAGS.positional_parameters_enforcement == 'EXCEPTION':
-          raise TypeError(message)
-        elif FLAGS.positional_parameters_enforcement == 'WARNING':
-          logger.warning(message)
-        else: # IGNORE
-          pass
-      return wrapped(*args, **kwargs)
-    return positional_wrapper
 
-  if isinstance(max_positional_args, (int, long)):
-    return positional_decorator
-  else:
-    args, _, _, defaults = inspect.getargspec(max_positional_args)
-    return positional(len(args) - len(defaults))(max_positional_args)
+    def positional_decorator(wrapped):
+        def positional_wrapper(*args, **kwargs):
+            if len(args) > max_positional_args:
+                plural_s = ""
+                if max_positional_args != 1:
+                    plural_s = "s"
+                message = "%s() takes at most %d positional argument%s (%d given)" % (
+                    wrapped.__name__,
+                    max_positional_args,
+                    plural_s,
+                    len(args),
+                )
+                if FLAGS.positional_parameters_enforcement == "EXCEPTION":
+                    raise TypeError(message)
+                elif FLAGS.positional_parameters_enforcement == "WARNING":
+                    logger.warning(message)
+                else:  # IGNORE
+                    pass
+            return wrapped(*args, **kwargs)
+
+        return positional_wrapper
+
+    if isinstance(max_positional_args, int):
+        return positional_decorator
+    else:
+        args, _, _, defaults = inspect.getargspec(max_positional_args)
+        return positional(len(args) - len(defaults))(max_positional_args)
 
 
 def scopes_to_string(scopes):
-  """Converts scope value to a string.
+    """Converts scope value to a string.
 
   If scopes is a string then it is simply passed through. If scopes is an
   iterable then a string is returned that is all the individual scopes
@@ -148,14 +158,14 @@ def scopes_to_string(scopes):
   Returns:
     The scopes formatted as a single string.
   """
-  if isinstance(scopes, types.StringTypes):
-    return scopes
-  else:
-    return ' '.join(scopes)
+    if isinstance(scopes, (str,)):
+        return scopes
+    else:
+        return " ".join(scopes)
 
 
 def dict_to_tuple_key(dictionary):
-  """Converts a dictionary to a tuple that can be used as an immutable key.
+    """Converts a dictionary to a tuple that can be used as an immutable key.
 
   The resulting key is always sorted so that logically equivalent dictionaries
   always produce an identical tuple for a key.
@@ -166,11 +176,11 @@ def dict_to_tuple_key(dictionary):
   Returns:
     A tuple representing the dictionary in it's naturally sorted ordering.
   """
-  return tuple(sorted(dictionary.items()))
+    return tuple(sorted(dictionary.items()))
 
 
 def _add_query_parameter(url, name, value):
-  """Adds a query parameter to a url.
+    """Adds a query parameter to a url.
 
   Replaces the current value if it already exists in the URL.
 
@@ -182,11 +192,11 @@ def _add_query_parameter(url, name, value):
   Returns:
     Updated query parameter. Does not update the url if value is None.
   """
-  if value is None:
-    return url
-  else:
-    parsed = list(urlparse.urlparse(url))
-    q = dict(parse_qsl(parsed[4]))
-    q[name] = value
-    parsed[4] = urllib.urlencode(q)
-    return urlparse.urlunparse(parsed)
+    if value is None:
+        return url
+    else:
+        parsed = list(urllib.parse.urlparse(url))
+        q = dict(parse_qsl(parsed[4]))
+        q[name] = value
+        parsed[4] = urllib.parse.urlencode(q)
+        return urllib.parse.urlunparse(parsed)

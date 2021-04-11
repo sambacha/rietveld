@@ -14,4 +14,4 @@
 
 import os
 
-IS_DEV = os.environ['SERVER_SOFTWARE'].startswith('Dev')  # Development server
+IS_DEV = os.environ["SERVER_SOFTWARE"].startswith("Dev")  # Development server

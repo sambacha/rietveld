@@ -21,14 +21,14 @@ import os
 import re
 import sys
 
-ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
-LIB = os.path.join(ROOT, '..', 'google_appengine', 'lib')
-sys.path.insert(0, os.path.join(ROOT, '..', 'google_appengine'))
-sys.path.append(os.path.join(LIB, 'django-1.3'))
-sys.path.append(os.path.join(LIB, 'fancy_urllib'))
-sys.path.append(os.path.join(LIB, 'simplejson'))
-sys.path.append(os.path.join(LIB, 'webob-1.2.3'))
-sys.path.append(os.path.join(LIB, 'yaml', 'lib'))
+ROOT = os.path.join(os.path.abspath(os.path.dirname(__file__)), "..")
+LIB = os.path.join(ROOT, "..", "google_appengine", "lib")
+sys.path.insert(0, os.path.join(ROOT, "..", "google_appengine"))
+sys.path.append(os.path.join(LIB, "django-1.3"))
+sys.path.append(os.path.join(LIB, "fancy_urllib"))
+sys.path.append(os.path.join(LIB, "simplejson"))
+sys.path.append(os.path.join(LIB, "webob-1.2.3"))
+sys.path.append(os.path.join(LIB, "yaml", "lib"))
 sys.path.append(ROOT)
 
 from google.appengine.ext.remote_api import remote_api_stub
@@ -36,86 +36,85 @@ import yaml
 
 
 def default_auth_func():
-  user = os.environ.get('EMAIL_ADDRESS')
-  if user:
-    print('User: %s' % user)
-  else:
-    user = raw_input('Username:')
-  return user, getpass.getpass('Password:')
+    user = os.environ.get("EMAIL_ADDRESS")
+    if user:
+        print(("User: %s" % user))
+    else:
+        user = input("Username:")
+    return user, getpass.getpass("Password:")
 
 
 def smart_auth_func():
-  """Try to guess first."""
-  try:
-    return os.environ['EMAIL_ADDRESS'], open('.pwd').readline().strip()
-  except (KeyError, IOError):
-    return default_auth_func()
+    """Try to guess first."""
+    try:
+        return os.environ["EMAIL_ADDRESS"], open(".pwd").readline().strip()
+    except (KeyError, IOError):
+        return default_auth_func()
 
 
 def default_app_id(directory):
-  return yaml.load(open(os.path.join(directory, 'app.yaml')))['application']
+    return yaml.load(open(os.path.join(directory, "app.yaml")))["application"]
 
 
 def setup_env(app_id, host=None, auth_func=None):
-  """Setup remote access to a GAE instance."""
-  auth_func = auth_func or smart_auth_func
-  host = host or '%s.appspot.com' % app_id
+    """Setup remote access to a GAE instance."""
+    auth_func = auth_func or smart_auth_func
+    host = host or "%s.appspot.com" % app_id
 
-  # pylint: disable=W0612
-  from google.appengine.api import memcache
-  from google.appengine.api.users import User
-  from google.appengine.ext import db
-  from google.appengine.ext import ndb
-  remote_api_stub.ConfigureRemoteDatastore(
-      None, '/_ah/remote_api', auth_func, host)
+    # pylint: disable=W0612
+    from google.appengine.api import memcache
+    from google.appengine.api.users import User
+    from google.appengine.ext import db
+    from google.appengine.ext import ndb
 
-  # Initialize environment.
-  os.environ['SERVER_SOFTWARE'] = ''
-  os.environ['DJANGO_SETTINGS_MODULE'] = 'settings'
-  import appengine_config
+    remote_api_stub.ConfigureRemoteDatastore(None, "/_ah/remote_api", auth_func, host)
 
-  # Create shortcuts.
-  import codereview
-  from codereview import models, views
+    # Initialize environment.
+    os.environ["SERVER_SOFTWARE"] = ""
+    os.environ["DJANGO_SETTINGS_MODULE"] = "settings"
+    import appengine_config
 
-  # Symbols presented to the user.
-  predefined_vars = locals().copy()
-  del predefined_vars['appengine_config']
-  del predefined_vars['auth_func']
+    # Create shortcuts.
+    import codereview
+    from codereview import models, views
 
-  # Load all the models.
-  for i in dir(models):
-    if re.match(r'[A-Z][a-z]', i[:2]):
-      predefined_vars[i] = getattr(models, i)
-  return predefined_vars
+    # Symbols presented to the user.
+    predefined_vars = locals().copy()
+    del predefined_vars["appengine_config"]
+    del predefined_vars["auth_func"]
+
+    # Load all the models.
+    for i in dir(models):
+        if re.match(r"[A-Z][a-z]", i[:2]):
+            predefined_vars[i] = getattr(models, i)
+    return predefined_vars
 
 
 def main():
-  parser = optparse.OptionParser()
-  parser.add_option('-v', '--verbose', action='count')
-  options, args = parser.parse_args()
+    parser = optparse.OptionParser()
+    parser.add_option("-v", "--verbose", action="count")
+    options, args = parser.parse_args()
 
-  if not args:
-    app_id = default_app_id(ROOT)
-  else:
-    app_id = args[0]
+    if not args:
+        app_id = default_app_id(ROOT)
+    else:
+        app_id = args[0]
 
-  host = None
-  if len(args) > 1:
-    host = args[1]
+    host = None
+    if len(args) > 1:
+        host = args[1]
 
-  if options.verbose:
-    logging.basicConfig(level=logging.DEBUG)
-  else:
-    logging.basicConfig(level=logging.ERROR)
+    if options.verbose:
+        logging.basicConfig(level=logging.DEBUG)
+    else:
+        logging.basicConfig(level=logging.ERROR)
 
-  predefined_vars = setup_env(app_id, host)
-  prompt = (
-      'App Engine interactive console for "%s".\n'
-      'Available symbols:\n'
-      '  %s\n') % (app_id, ', '.join(sorted(predefined_vars)))
-  code.interact(prompt, None, predefined_vars)
+    predefined_vars = setup_env(app_id, host)
+    prompt = (
+        'App Engine interactive console for "%s".\n' "Available symbols:\n" "  %s\n"
+    ) % (app_id, ", ".join(sorted(predefined_vars)))
+    code.interact(prompt, None, predefined_vars)
 
 
-if __name__ == '__main__':
-  sys.exit(main())
+if __name__ == "__main__":
+    sys.exit(main())

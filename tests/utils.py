@@ -21,36 +21,36 @@ from google.appengine.ext import testbed
 from django.test import TestCase as _TestCase
 
 
-FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'files')
+FILES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "files")
 
 
 class TestCase(_TestCase):
-  """Customized Django TestCase.
+    """Customized Django TestCase.
 
   This class disables the setup of Django features that are not
   available on App Engine (e.g. fixture loading). And it initializes
   the Testbad class provided by the App Engine SDK.
   """
 
-  def _fixture_setup(self):  # defined in django.test.TestCase
-    self.testbed = testbed.Testbed()
-    self.testbed.activate()
-    self.testbed.init_memcache_stub()
-    self.testbed.init_datastore_v3_stub()
-    self.testbed.init_user_stub()
+    def _fixture_setup(self):  # defined in django.test.TestCase
+        self.testbed = testbed.Testbed()
+        self.testbed.activate()
+        self.testbed.init_memcache_stub()
+        self.testbed.init_datastore_v3_stub()
+        self.testbed.init_user_stub()
 
-  def _fixture_teardown(self):  # defined in django.test.TestCase
-    self.testbed.deactivate()
+    def _fixture_teardown(self):  # defined in django.test.TestCase
+        self.testbed.deactivate()
 
-  def login(self, email):
-    """Logs in a user identified by email."""
-    os.environ['USER_EMAIL'] = email
+    def login(self, email):
+        """Logs in a user identified by email."""
+        os.environ["USER_EMAIL"] = email
 
-  def logout(self):
-    """Logs the user out."""
-    os.environ['USER_EMAIL'] = ''
+    def logout(self):
+        """Logs the user out."""
+        os.environ["USER_EMAIL"] = ""
 
 
 def load_file(fname):
-  """Read file and return it's content."""
-  return open(os.path.join(FILES_DIR, fname)).read()
+    """Read file and return it's content."""
+    return open(os.path.join(FILES_DIR, fname)).read()

@@ -22,7 +22,4 @@ from django.conf.urls.defaults import *
 #
 #    url(r'subpath/', include('codereview.urls')),
 #
-urlpatterns = patterns(
-    '',
-    url(r'', include('codereview.urls')),
-    )
+urlpatterns = patterns("", url(r"", include("codereview.urls")),)
